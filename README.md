@@ -10,12 +10,12 @@ In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tens
 ``cutex.SourceModule`` works differently compared to [PyTorch's official cuda extension guide](https://pytorch.org/tutorials/advanced/cpp_extension.html) in following ways:
 
 - **It compiles lightning fast!** Especially suitable for rapidly developing new algorithms with a jupyter kernel, so that you don't wait for importing pytorch repeatedly.
-- Without boilerplate cpp wrappers, everything goes within one python file in a concise manner.
-- It use raw CUDA sytax so that PyTorch c++ API is _not_ available.
+- Without boilerplate cpp wrappers, **every user code goes within one python file**.
+- It use raw CUDA syntax so that PyTorch's c++ API is _not_ available.
 
 ``cutex.SourceModule`` works differently compared to pycuda's ``SourceModule`` in following ways:
 
-- Support efficient multi-dimensional `torch.Tensor` access with (efficient & optional) out-of-boundary check.
+- Support efficient **multi-dimensional `torch.Tensor` access with (efficient & optional) out-of-boundary check**.
 - Enhanced automatic type conversion and error messages.
 
 ## Example
