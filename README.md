@@ -1,5 +1,5 @@
 
-<p align="center"><img src="logo.png" alt="Logo"></p>
+<p align="center"><img src="https://github.com/tjyuyao/cutex/raw/main/logo.png" alt="Logo"></p>
 
 <h3 align="center" style="font-weight:bold"> PyCUDA based PyTorch Extension Made Easy </h3>
 
