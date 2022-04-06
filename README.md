@@ -1,8 +1,9 @@
 
-<p style="text-align:center;"><img src="logo.png" alt="Logo"></p>
+<p align="center"><img src="logo.png" alt="Logo"></p>
 
-<h3 style="text-align:center; font-weight:bold"> PyCUDA based PyTorch Extension Made Easy </h3>
+<h3 align="center" style="font-weight:bold"> PyCUDA based PyTorch Extension Made Easy </h3>
 
+---
 
 In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tensor type.
 
