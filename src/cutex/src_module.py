@@ -27,7 +27,7 @@ _kernel_cu_regex = re.compile(r'kernel.cu\((?P<lineno>[0-9]+)\).*')
 
 # https://nw.tsuda.ac.jp/lec/cuda/doc_v9_0/pdf/CUDA_Math_API.pdf
 
-_MEMCHECK_ENABLER = '#define _ICE_MEMCHECK_ 1 \n'
+_MEMCHECK_ENABLER = '#define _CUTEX_MEMCHECK_ 1 \n'
 _EXTRA_HEADERS ='#include "PyCUDATensorAccessor.cuh" \n'
 
 
@@ -58,7 +58,7 @@ class _Tensor(cuda.PointerHolderBase):
         self.t = t
         self.dims = t.dim()
         # memory allocation on cuda using pytorch interface
-        self.struct = torch.empty((3,), dtype=torch.int64, device="cuda") # maps to Tensor struct defined in "PyCUDATensorAccessor.cuh"
+        self.struct = torch.empty((4,), dtype=torch.int64, device="cuda") # maps to Tensor struct defined in "PyCUDATensorAccessor.cuh"
         self.base = int(t.data_ptr())
         self.size = torch.tensor(tuple(t.size()), device="cuda", dtype=torch.int64)
         self.stride = torch.tensor(tuple(t.stride()), device="cuda", dtype=torch.int64)
@@ -67,6 +67,7 @@ class _Tensor(cuda.PointerHolderBase):
         cuda.memcpy_htod(int(self.gpudata), memoryview(numpy.uintp(self.base)))
         cuda.memcpy_htod(int(self.gpudata) + 8, memoryview(numpy.uintp(int(self.size.data_ptr()))))
         cuda.memcpy_htod(int(self.gpudata) + 16, memoryview(numpy.uintp(int(self.stride.data_ptr()))))
+        cuda.memcpy_htod(int(self.gpudata) + 24, memoryview(numpy.uintp(self.dims)))
 
 
 class SourceModule(object):

@@ -38,8 +38,8 @@ __global__ void matmul(Tensor<float, 2> a, Tensor<float, 2> b, Tensor<float, 2> 
     int m = blockIdx.y * blockDim.y + threadIdx.y;
     int n = blockIdx.x * blockDim.x + threadIdx.x;
     float v = 0.f;
-    if (m >= M || n >= N) return;
-    for (int k = 0; k < K; ++k) {
+    if (m >= M || n >= N) return; // you can also write `a.size(0)` instead of `M`, `b.size(1)` instead of `N`
+    for (int k = 0; k < K; ++k) { // you can also write `a.size(1)` instead of `K`
         v += a[m][k] * b[k][n]; // you can access tensor elements just like operating a multi-level array, with optional out-of-bound check.
     }
     c[m][n] = v; // the modification will be reflected in the torch tensor in place, no redundant data copying.
