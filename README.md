@@ -9,11 +9,11 @@ In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tens
 
 ``cutex.SourceModule`` works differently compared to [PyTorch's official cuda extension guide](https://pytorch.org/tutorials/advanced/cpp_extension.html) in following ways:
 
-- **It compiles lightning fast!** Especially suitable for rapidly developing new algorithms with a jupyter kernel, so that you don't wait for importing pytorch repeatedly.
+- **It compiles lightning fast!** Especially suitable for rapidly developing your favoritenew algorithm.
 - Without boilerplate cpp wrappers, **every user code goes within one python file**.
 - It use raw CUDA syntax so that PyTorch's c++ API is _not_ available.
 
-``cutex.SourceModule`` works differently compared to pycuda's ``SourceModule`` in following ways:
+``cutex.SourceModule`` extends pycuda's ``SourceModule`` in following ways:
 
 - Support efficient **multi-dimensional `torch.Tensor` access with (efficient & optional) out-of-boundary check**.
 - Enhanced automatic type conversion and error messages.
@@ -21,6 +21,7 @@ In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tens
 ## Example
 
 The following example demonstrates a vanilla matrix multiplication implementation for pytorch tensor but written in pure cuda.
+As you may happily notice, pytorch is responsible for allocation of new Tensors instead of in the cuda code, and the elements of tensors can be read and modified inside the kernel function. 
 
 ```python
 import torch
@@ -32,21 +33,29 @@ b = torch.rand((K, N), dtype=torch.float32).cuda()
 c = torch.empty((M, N), dtype=torch.float32).cuda()
 
 kernels = cutex.SourceModule(r"""
-__global__ void matmul(Tensor<float, 2> *a, Tensor<float, 2> *b, Tensor<float, 2> *c, int M, int N, int K) {
+//cuda
+__global__ void matmul(Tensor<float, 2> a, Tensor<float, 2> b, Tensor<float, 2> c, int M, int N, int K) {
     int m = blockIdx.y * blockDim.y + threadIdx.y;
     int n = blockIdx.x * blockDim.x + threadIdx.x;
     float v = 0.f;
     if (m >= M || n >= N) return;
     for (int k = 0; k < K; ++k) {
-        v += (*a)[m][k] * (*b)[k][n];
+        v += a[m][k] * b[k][n]; // you can access tensor elements just like operating a multi-level array, with optional out-of-bound check.
     }
-    (*c)[m][n] = v;
+    c[m][n] = v; // the modification will be reflected in the torch tensor in place, no redundant data copying.
 }
-""", float_bits=32)
+//!cuda
+""",
+    float_bits=32,  # change to 16 to use half precision as `float` type in the above source code.
+    boundscheck=True, # turning off checking makes the program to run faster, default is on.
+    )
 
-kernels.matmul(a, b, c, M, N, K, grid=(N // 32 + 1, M // 32 + 1), block=(32, 32, 1))
+kernels.matmul(  # automatically discover the kernel function by its name (e.g. 'matmul'), just like a normal python module.
+    a, b, c, M, N, K,  # directly pass tensors and scalars as arguments
+    grid=(N // 16 + 1, M // 16 + 1),  # grid size (number of blocks to be executed)
+    block=(16, 16, 1),  # block size (number of threads in each block)
+)
 
-torch.cuda.synchronize()
 assert torch.allclose(c, torch.mm(a, b))
 ```
 
@@ -58,5 +67,5 @@ pip install cutex
 
 **Note:**
 
-- You should install pytorch seperately.
-- If you use vscode, there is a recommended [extension](https://marketplace.visualstudio.com/items?itemName=huangyuyao.pycuda-highlighter) for highlighting CUDA source in python docstring.
+- You should install pytorch and nvcc manually, which are not automatically managed dependencies.
+- The `//cuda` and `//!cuda` comments are not mandatory, it works together with the VSCode [extension](https://marketplace.visualstudio.com/items?itemName=huangyuyao.pycuda-highlighter) for highlighting CUDA source in python docstring.

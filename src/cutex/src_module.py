@@ -6,6 +6,7 @@ import re
 from functools import wraps
 
 import numpy
+import CppHeaderParser
 
 # According to [this link](https://numpy.org/devdocs/release/1.20.0-notes.html#using-the-aliases-of-builtin-types-like-np-int-is-deprecated),
 # `np.bool` is a deprecated alias for the builtin `bool`. This deprecation will cause `/site-packages/pycuda/compyte/dtypes.py:122`  with code
@@ -88,6 +89,7 @@ class SourceModule(object):
 
         """
         import torch
+        source = self._wrap_tensor_ptr(source)
         source = self._replace_data_type(source, int_bits, float_bits)
         if not self._find_extern_C(source):
             source = 'extern "C" {\n' + source +'\n}'
@@ -134,11 +136,11 @@ class SourceModule(object):
                     casted_args.append(arg)
                 if self.mod is None:
                     self._jit_compile()  # compile lazily
-                func = self.mod.get_function(name)
+                func = self.mod.get_function("__wrapper_"+name)
                 func(*casted_args, block=block, grid=grid, **kwds)
         return wrapper
 
-    def _jit_compile(self):
+    def _jit_compile(self) -> None:
         import pycuda.driver as cuda
         from pycuda.compiler import SourceModule
         try:
@@ -153,15 +155,37 @@ class SourceModule(object):
             raise e
     
     @staticmethod
-    def _find_extern_C(source):
+    def _find_extern_C(source) -> bool:
         for _ in _extern_c_regex.finditer(source):
             return True
         return False
 
     @staticmethod
-    def _replace_data_type(string, int_bits, float_bits):
+    def _replace_data_type(string, int_bits, float_bits)->str:
         int_t = f"int{int_bits}_t"
         float_t = {16:"__half", 32:"float", 64:"double"}[float_bits]
         string = _int_regex.sub(int_t, string)
         string = _float_regex.sub(float_t, string)
         return string
+
+    @staticmethod
+    def _wrap_tensor_ptr(source)->str:
+        parser = CppHeaderParser.CppHeader(source, argType="string")
+        blocks = [source.replace("__global__", "__device__")]
+        for f in parser.functions:
+            # print(f['rtnType'], f['name'])
+            if f['rtnType'] != "__global__ void": continue # ignore non-kernel function
+            new_parameters = []
+            call_parameters = []
+            for p in f['parameters']:
+                star = "*" if p['type'].startswith('Tensor<') else ""
+                new_parameters.append(' '.join([p['type'], star+p['name']]))
+                call_parameters.append(star+p['name'])
+            wrapper_func = f"""
+__global__ void __wrapper_{f['name']}({', '.join(new_parameters)}) {{
+    {f['name']}({', '.join(call_parameters)});
+}}
+"""
+            blocks.append(wrapper_func)
+        
+        return ''.join(blocks)
