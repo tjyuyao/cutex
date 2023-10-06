@@ -66,7 +66,7 @@ template <typename T> struct Tensor<T, 1> {
   __device__ size_t size(index_t i = 0) const {
     if (i < 0) i = dims_ + i;
 #ifdef _CUTEX_MEMCHECK_
-    if (i >= N || i < 0) printf("Out-Of-Bound detected when calling Tensor.size(%" PRId64 ")", i);
+    if (i >= 1 || i < 0) printf("Out-Of-Bound detected when calling Tensor.size(%" PRId64 ")", i);
 #endif
     return size_[i];
   }

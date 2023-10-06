@@ -69,3 +69,21 @@ pip install cutex
 
 - You should install pytorch and nvcc manually, which are not automatically managed dependencies.
 - The `//cuda` and `//!cuda` comments are not mandatory, it works together with the VSCode [extension](https://marketplace.visualstudio.com/items?itemName=huangyuyao.pycuda-highlighter) for highlighting CUDA source in python docstring.
+
+## Change Log
+
+```
+# format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
+# "[CUDA]" means changes related to the cuda side Tensor API.
+
+v0.2.2+HEAD - multiple enhancements.
+    - [CUDA] fatal bug fixed checking OOB in `Tensor<Any,1>.size(dim:int)->int` function;
+    - add `ceildiv(int, int)->int` API as a util function.
+v0.2.1+dc4373a - [CUDA] add `Tensor.size(dim:int)->int` API.
+v0.2.0+03c3c5f - [CUDA] declare Tensor type argument instead of its pointer.
+v0.1.1+d088de6 - core features
+    - basic automatic cuda context management;
+    - basic automatic tensor type argument via `pycuda.driver.PointerHolderBase`;
+    - basic out-of-boundary check;
+    - easy to use `SourceModule` API.
+```
