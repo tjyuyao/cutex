@@ -77,15 +77,15 @@ def inline(cuda_src, float_bits=None, int_bits=32) -> None:
         for k, v in args.items():
             if isinstance(v, Tensor):
                 decl = f"Tensor<{DTYPE_MAPPING[v.dtype]}, {v.dim()}> {k}"
-                arg = _Tensor(v)
+                arg = _Tensor(v.cuda())
             elif isinstance(v, int):
-                decl = f"{int_ctype} {k}"
+                decl = f"const {int_ctype} {k}"
                 arg = np_int_type(v)
             elif isinstance(v, float):
-                decl = f"{float_ctype} {k}"
+                decl = f"const {float_ctype} {k}"
                 arg = np_float_type(v)
             elif isinstance(v, bool):
-                decl = f"{bool_ctype} {k}"
+                decl = f"const {bool_ctype} {k}"
                 arg = v
             else:
                 continue

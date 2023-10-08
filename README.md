@@ -114,13 +114,14 @@ pip install -U cutex --index-url "https://pypi.org/simple/"
 # format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
 # "[CUDA]" means changes related to the cuda side Tensor API.
 
-v0.3.0+HEAD - !NEW FEATURE! inline execution of CUDA code
+v0.3.1+HEAD - automatically send tensor to cuda in inline execution; scalars are const;
+v0.3.0+b93dc6 - !NEW FEATURE! inline execution of CUDA code
 v0.2.2+025fb1 - multiple enhancements.
     - [CUDA] fatal bug fixed checking OOB in `Tensor<Any,1>.size(dim:int)->int` function;
     - !NEW FEATURE! add `ceildiv(int, int)->int` API as a util function.
-v0.2.1+dc4373a - [CUDA] add `Tensor.size(dim:int)->int` API.
-v0.2.0+03c3c5f - [CUDA] !NEW FEATURE! declare Tensor type argument instead of its pointer.
-v0.1.1+d088de6 - core features
+v0.2.1+dc4373 - [CUDA] add `Tensor.size(dim:int)->int` API.
+v0.2.0+03c3c5 - [CUDA] !NEW FEATURE! declare Tensor type argument instead of its pointer.
+v0.1.1+d088de - core features
     - basic automatic cuda context management;
     - basic automatic tensor type argument via `pycuda.driver.PointerHolderBase`;
     - basic out-of-boundary check;
