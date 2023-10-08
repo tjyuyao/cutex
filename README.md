@@ -20,7 +20,7 @@ In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tens
 
 ## Example (inline CUDA API)
 
-```
+```py
 import cutex
 import torch
 
@@ -70,7 +70,7 @@ a = torch.rand((M, K), dtype=torch.float32).cuda()
 b = torch.rand((K, N), dtype=torch.float32).cuda()
 c = torch.empty((M, N), dtype=torch.float32).cuda()
 
-kernels = cutex.SourceModule(r"""
+kernels = cutex.SourceModule("""
 //cuda
 __global__ void matmul(Tensor<float, 2> a, Tensor<float, 2> b, Tensor<float, 2> c, int M, int N, int K) {
     int m = blockIdx.y * blockDim.y + threadIdx.y;
@@ -100,7 +100,7 @@ assert torch.allclose(c, torch.mm(a, b))
 ## Installation
 
 ```bash
-pip install cutex
+pip install -U cutex --index-url "https://pypi.org/simple/"
 ```
 
 **Note:**
