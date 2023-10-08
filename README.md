@@ -18,7 +18,45 @@ In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tens
 - Support efficient **multi-dimensional `torch.Tensor` access with (efficient & optional) out-of-boundary check**.
 - Enhanced automatic type conversion and error messages.
 
-## Example
+## Example (inline CUDA API)
+
+```
+import cutex
+import torch
+
+
+def matmul(A, B):
+    M, J = A.size()
+    K, N = B.size()
+    assert J == K
+    gridDim = (cutex.ceildiv(N, 16), cutex.ceildiv(M, 16), 1)
+    blockDim = (16, 16, 1)
+    C = torch.empty((M, N), dtype=A.dtype, device=A.device)
+    cutex.inline("""
+    int m = blockIdx.y * blockDim.y + threadIdx.y;
+    int n = blockIdx.x * blockDim.x + threadIdx.x;
+    float v = 0.f;
+    if (m >= M || n >= N) return;
+    for (int k = 0; k < K; ++k) {
+        v += A[m][k] * B[k][n];
+    }
+    C[m][n] = v;
+    """)  # all local vars are captured into the kernel except for those with unknown types.
+    return C
+
+
+def test():
+    M, N, K = 4, 4, 1
+    A = torch.rand((M, K), dtype=torch.float32).cuda()
+    B = torch.rand((K, N), dtype=torch.float32).cuda()
+    torch.testing.assert_close(matmul(A, B), torch.mm(A, B))
+    print(matmul(A, B)) 
+
+
+test()
+```
+
+## Example (lower level SourceModule API)
 
 The following example demonstrates a vanilla matrix multiplication implementation for pytorch tensor but written in pure cuda.
 As you may happily notice, pytorch is responsible for allocation of new Tensors instead of in the cuda code, and the elements of tensors can be read and modified inside the kernel function. 
@@ -76,11 +114,12 @@ pip install cutex
 # format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
 # "[CUDA]" means changes related to the cuda side Tensor API.
 
-v0.2.2+HEAD - multiple enhancements.
+v0.3.0+HEAD - !NEW FEATURE! inline execution of CUDA code
+v0.2.2+025fb1 - multiple enhancements.
     - [CUDA] fatal bug fixed checking OOB in `Tensor<Any,1>.size(dim:int)->int` function;
-    - add `ceildiv(int, int)->int` API as a util function.
+    - !NEW FEATURE! add `ceildiv(int, int)->int` API as a util function.
 v0.2.1+dc4373a - [CUDA] add `Tensor.size(dim:int)->int` API.
-v0.2.0+03c3c5f - [CUDA] declare Tensor type argument instead of its pointer.
+v0.2.0+03c3c5f - [CUDA] !NEW FEATURE! declare Tensor type argument instead of its pointer.
 v0.1.1+d088de6 - core features
     - basic automatic cuda context management;
     - basic automatic tensor type argument via `pycuda.driver.PointerHolderBase`;

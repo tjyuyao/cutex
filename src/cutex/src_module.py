@@ -108,10 +108,10 @@ class SourceModule(object):
         ))
         self.mod = None
         self.compile_kwds = kwds
-        self.numpy_int_type = {16: numpy.int16, 32: numpy.int32, 64: numpy.int64}[int_bits]
-        self.numpy_float_type = {16: numpy.float32, 32: numpy.float32, 64: numpy.float64}[float_bits]
+        self.numpy_int_type = {16: numpy.int16, 32: numpy.int32, 64: numpy.int64, None: None}[int_bits]
+        self.numpy_float_type = {16: numpy.float32, 32: numpy.float32, 64: numpy.float64, None: None}[float_bits]
         self.torch_int_types = [torch.int16, torch.int32, torch.int64]
-        self.torch_all_float_types = {16: torch.float16, 32: torch.float32, 64: torch.float64}
+        self.torch_all_float_types = {16: torch.float16, 32: torch.float32, 64: torch.float64, None: None}
         self.torch_float_type = self.torch_all_float_types[float_bits]
         self.float_bits = float_bits
     
@@ -163,10 +163,12 @@ class SourceModule(object):
 
     @staticmethod
     def _replace_data_type(string, int_bits, float_bits)->str:
-        int_t = f"int{int_bits}_t"
-        float_t = {16:"__half", 32:"float", 64:"double"}[float_bits]
-        string = _int_regex.sub(int_t, string)
-        string = _float_regex.sub(float_t, string)
+        if int_bits:
+            int_t = f"int{int_bits}_t"
+            string = _int_regex.sub(int_t, string)
+        if float_bits:
+            float_t = {16:"__half", 32:"float", 64:"double"}[float_bits]
+            string = _float_regex.sub(float_t, string)
         return string
 
     @staticmethod
