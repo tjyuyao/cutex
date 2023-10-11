@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="cutex",
-    version="0.3.4",
+    version="0.3.5",
     author="Yuyao Huang",
     author_email="huangyuyao@outlook.com",
     description="PyCUDA based PyTorch Extension Made Easy",

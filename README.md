@@ -114,7 +114,8 @@ pip install -U cutex --index-url "https://pypi.org/simple/"
 # format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
 # "[CUDA]" means changes related to the cuda side Tensor API.
 
-v0.3.4+HEAD - bugfix: error report in jupyter cell.
+v0.3.5+HEAD - bugfix: bool scalar type automatically converted into int32_t.
+v0.3.4+07b6af - bugfix: error report in jupyter cell.
 v0.3.3+0dc015 - bugfix: error report should find in the whole file.
 v0.3.2+bc47ee - enhanced the error report, accurate lineno in the python file; ensure gridDim and blockDim to be integers.
 v0.3.1+b46561 - automatically send tensor to cuda in inline execution; scalars are const;

@@ -18,3 +18,17 @@ __global__ void print(Tensor<bool, 2> booldata) {
 
 print(booldata)
 kernel.print(booldata, block=(3, 3, 1))
+
+
+kernel = SourceModule(
+"""
+__global__ void print(bool x) {
+    if (x) {
+        printf("True\\n");
+    } else {
+        printf("False\\n");
+    }
+}
+""", 32)
+
+kernel.print(True)
