@@ -114,7 +114,8 @@ pip install -U cutex --index-url "https://pypi.org/simple/"
 # format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
 # "[CUDA]" means changes related to the cuda side Tensor API.
 
-v0.3.1+HEAD - automatically send tensor to cuda in inline execution; scalars are const;
+v0.3.2+HEAD - enhanced the error report, accurate lineno in the python file; ensure gridDim and blockDim to be integers.
+v0.3.1+b46561 - automatically send tensor to cuda in inline execution; scalars are const;
 v0.3.0+b93dc6 - !NEW FEATURE! inline execution of CUDA code
 v0.2.2+025fb1 - multiple enhancements.
     - [CUDA] fatal bug fixed checking OOB in `Tensor<Any,1>.size(dim:int)->int` function;

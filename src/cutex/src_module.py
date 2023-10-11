@@ -5,6 +5,7 @@ import os
 import re
 from functools import wraps
 
+import inspect
 import numpy
 import CppHeaderParser
 
@@ -23,12 +24,13 @@ import pycuda.driver as cuda
 _int_regex = re.compile(r'\bint\b')
 _float_regex = re.compile(r'\bfloat\b')
 _extern_c_regex = re.compile(r'extern[ ]+"C"')
-_kernel_cu_regex = re.compile(r'kernel.cu\((?P<lineno>[0-9]+)\).*')
+_kernel_cu_regex = re.compile(r'kernel.cu\((?P<lineno>[0-9]+)\)(.*)')
 
 # https://nw.tsuda.ac.jp/lec/cuda/doc_v9_0/pdf/CUDA_Math_API.pdf
 
 _MEMCHECK_ENABLER = '#define _CUTEX_MEMCHECK_ 1 \n'
 _EXTRA_HEADERS ='#include "PyCUDATensorAccessor.cuh" \n'
+_EXTRA_HEADERS_LINECNT = _EXTRA_HEADERS.count('\n')
 
 
 class _CUDAContext:
@@ -90,16 +92,23 @@ class SourceModule(object):
 
         """
         import torch
+        self.py_file = inspect.getfile(inspect.currentframe().f_back)
+        self.lineno_offset = previous_frame_arg_lineno(source)
         source = self._wrap_tensor_ptr(source)
         source = self._replace_data_type(source, int_bits, float_bits)
         if not self._find_extern_C(source):
             source = 'extern "C" {\n' + source +'\n}'
+            self.lineno_offset -= 1
         if float_bits == 16:
             source = "# include <cuda_fp16.h>\n" + _EXTRA_HEADERS + source
+            self.lineno_offset -= _EXTRA_HEADERS_LINECNT + 1
         else:
             source = _EXTRA_HEADERS + source
+            self.lineno_offset -= _EXTRA_HEADERS_LINECNT
         if boundscheck:
             source = _MEMCHECK_ENABLER + source
+            self.lineno_offset -= 1
+        self.source = source
         include_dirs.append(os.path.join(os.path.dirname(__file__), "include"))
         kwds.update(dict(
             source=source,
@@ -120,6 +129,8 @@ class SourceModule(object):
         import pycuda.driver as cuda
         @wraps(cuda.Function.__call__)
         def wrapper(*args, block=(1, 1, 1), grid=(1, 1), **kwds):
+            block = tuple(map(int, block))
+            grid = tuple(map(int, grid))
             casted_args = []
             with _CUDAContext():
                 for arg in args:
@@ -144,6 +155,7 @@ class SourceModule(object):
     def _jit_compile(self) -> None:
         import pycuda.driver as cuda
         from pycuda.compiler import SourceModule
+        wrapper_lineno = self.source[:self.source.find("__global__")].count('\n')
         try:
             self.mod = SourceModule(**self.compile_kwds)
         except cuda.CompileError as e:
@@ -151,8 +163,17 @@ class SourceModule(object):
             source_lines = self.compile_kwds["source"].split("\n")
             def repl(x):
                 lineno = int(x.group("lineno")) - 1
-                return f"{x.group(0)}\n{source_lines[lineno]}"
-            e.stderr = _kernel_cu_regex.sub(repl, e.stderr)
+                py_filelineno = f"{self.py_file}({self.lineno_offset + lineno}){x.group(2)}"
+                if wrapper_lineno >= 0 and lineno >= wrapper_lineno:
+                    return ""
+                lines_before = source_lines[max(0, lineno - 5):lineno]
+                lines_after = source_lines[lineno+1:min(len(source_lines), lineno + 5)]
+                leader_before = '╭' + '│' * (len(lines_before) - 1)
+                leader_after = '│' * (len(lines_after) - 1) + '╰'
+                lines_before = ''.join(['\n'+a+b for a, b in zip(leader_before, lines_before)])
+                lines_after = ''.join(['\n'+a+b for a, b in zip(leader_after, lines_after)])
+                return f"{py_filelineno}\n{lines_before}\n┃{source_lines[lineno]}{lines_after}"
+            e.stderr = _kernel_cu_regex.sub(repl, e.stderr).replace("\n\n\n", "\n")
             raise e
     
     @staticmethod
@@ -184,11 +205,46 @@ class SourceModule(object):
                 star = "*" if p['type'].startswith('Tensor<') else ""
                 new_parameters.append(' '.join([p['type'], star+p['name']]))
                 call_parameters.append(star+p['name'])
+            formal_arg_list = ','.join(new_parameters)
+            actual_arg_list = ','.join(call_parameters)
             wrapper_func = f"""
-__global__ void __wrapper_{f['name']}({', '.join(new_parameters)}) {{
-    {f['name']}({', '.join(call_parameters)});
+__global__ void __wrapper_{f['name']}({formal_arg_list}) {{
+    {f['name']}({actual_arg_list});
 }}
 """
             blocks.append(wrapper_func)
         
         return ''.join(blocks)
+
+
+def previous_frame_arg_lineno(arg_value):
+    frame = inspect.currentframe().f_back.f_back
+
+    # Iterate over the previous frame's local variables and search for the argument value
+    for name, value in frame.f_locals.items():
+        if value == arg_value:
+            skip = 0
+            name = re.compile(rf"\b{name}\b")
+            break
+    else:
+        if isinstance(arg_value, str):
+            name = None
+        else:
+            name = repr(arg_value)
+            name = re.compile(rf"\b{name}\b")
+        skip = frame.f_lineno
+    
+    source = inspect.getsource(frame)
+    
+    for arg_lineno, line in enumerate(source.split('\n')):
+        if arg_lineno < skip:
+            continue
+        if name is None:
+            if '\"' in line or '\'' in line:
+                break
+        elif name.findall(line) :
+            break
+    else:
+        raise ValueError(f"Argument name '{name}' not found in previous frame")
+
+    return arg_lineno + 1

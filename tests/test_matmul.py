@@ -6,8 +6,16 @@ a = torch.rand((M, K), dtype=torch.float32).cuda()
 b = torch.rand((K, N), dtype=torch.float32).cuda()
 c = torch.empty((M, N), dtype=torch.float32).cuda()
 
-kernels = cutex.SourceModule(r"""
-__global__ void matmul(Tensor<float, 2> a, Tensor<float, 2> b, Tensor<float, 2> c, int M, int N, int K) {
+kernels = cutex.SourceModule(
+    """
+__global__ void matmul(
+    Tensor<float, 2> a,
+    Tensor<float, 2> b,
+    Tensor<float, 2> c,
+    int M,
+    int N,
+    int K
+) {
     int m = blockIdx.y * blockDim.y + threadIdx.y;
     int n = blockIdx.x * blockDim.x + threadIdx.x;
     float v = 0.f;

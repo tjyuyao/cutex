@@ -4,4 +4,4 @@ def ceildiv(a:int, b:int) -> int:
     Reference:
         https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
     """
-    return -(a // -b)
+    return -(int(a) // -int(b))
