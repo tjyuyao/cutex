@@ -234,7 +234,12 @@ def previous_frame_arg_lineno(arg_value):
             name = re.compile(rf"\b{name}\b")
         skip = frame.f_lineno
     
-    source = open(inspect.getfile(frame)).read()
+    try:
+        offset = 1
+        source = open(inspect.getfile(frame)).read()
+    except FileNotFoundError:
+        offset = frame.f_lineno
+        source = inspect.getsource(frame)
     
     for arg_lineno, line in enumerate(source.split('\n')):
         if arg_lineno < skip:
@@ -247,4 +252,4 @@ def previous_frame_arg_lineno(arg_value):
     else:
         raise ValueError(f"Argument name '{name}' not found in previous frame")
 
-    return arg_lineno + 1
+    return arg_lineno + offset
