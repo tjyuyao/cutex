@@ -23,7 +23,6 @@ import pycuda.driver as cuda
 
 _int_regex = re.compile(r'\bint\b')
 _float_regex = re.compile(r'\bfloat\b')
-_bool_regex = re.compile(r'\bbool\b')
 _extern_c_regex = re.compile(r'extern[ ]+"C"')
 _kernel_cu_regex = re.compile(r'kernel.cu\((?P<lineno>[0-9]+)\)(.*)')
 
@@ -191,7 +190,6 @@ class SourceModule(object):
         if float_bits:
             float_t = {16:"__half", 32:"float", 64:"double"}[float_bits]
             string = _float_regex.sub(float_t, string)
-        string = _bool_regex.sub("int32_t", string)
         return string
 
     @staticmethod
@@ -205,6 +203,7 @@ class SourceModule(object):
             call_parameters = []
             for p in f['parameters']:
                 star = "*" if p['type'].startswith('Tensor<') else ""
+                if p["type"] == "bool": p["type"] = "int32_t"
                 new_parameters.append(' '.join([p['type'], star+p['name']]))
                 call_parameters.append(star+p['name'])
             formal_arg_list = ','.join(new_parameters)
