@@ -195,7 +195,7 @@ class SourceModule(object):
     @staticmethod
     def _wrap_tensor_ptr(source)->str:
         parser = CppHeaderParser.CppHeader(source, argType="string")
-        blocks = [source.replace("__global__", "__device__")]
+        blocks = [source.replace("__global__", "__forceinline__ __device__")]
         for f in parser.functions:
             # print(f['rtnType'], f['name'])
             if f['rtnType'] != "__global__ void": continue # ignore non-kernel function
@@ -234,7 +234,7 @@ def previous_frame_arg_lineno(arg_value):
             name = re.compile(rf"\b{name}\b")
         skip = frame.f_lineno
     
-    source = inspect.getsource(frame)
+    source = open(inspect.getfile(frame)).read()
     
     for arg_lineno, line in enumerate(source.split('\n')):
         if arg_lineno < skip:
