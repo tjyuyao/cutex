@@ -114,7 +114,8 @@ pip install -U cutex --index-url "https://pypi.org/simple/"
 # format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
 # "[CUDA]" means changes related to the cuda side Tensor API.
 
-v0.3.6+HEAD - bugfix: v0.3.5 uses regex to replace bool, this may be confused with Tensor with bool dtype, this version revert v0.3.5 and use the wrapper to convert scalar type.
+v0.3.7+HEAD - bugfix: passing python float to a kernel that accept a __half type now works.
+v0.3.6+4e9b41 - bugfix: v0.3.5 uses regex to replace bool, this may be confused with Tensor with bool dtype, this version revert v0.3.5 and use the wrapper to convert scalar type.
 v0.3.5+8bdfbc - bugfix: bool scalar type automatically converted into int32_t.
 v0.3.4+07b6af - bugfix: error report in jupyter cell.
 v0.3.3+0dc015 - bugfix: error report should find in the whole file.

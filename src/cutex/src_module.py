@@ -94,8 +94,8 @@ class SourceModule(object):
         import torch
         self.py_file = inspect.getfile(inspect.currentframe().f_back)
         self.lineno_offset = previous_frame_arg_lineno(source)
-        source = self._wrap_tensor_ptr(source)
         source = self._replace_data_type(source, int_bits, float_bits)
+        source = self._wrap_tensor_ptr(source)
         if not self._find_extern_C(source):
             source = 'extern "C" {\n' + source +'\n}'
             self.lineno_offset -= 1
@@ -204,6 +204,8 @@ class SourceModule(object):
             for p in f['parameters']:
                 star = "*" if p['type'].startswith('Tensor<') else ""
                 if p["type"] == "bool": p["type"] = "int32_t"
+                # print("\t", p["type"], p["name"])
+                if p["type"] == "__half": p["type"] = "float"
                 new_parameters.append(' '.join([p['type'], star+p['name']]))
                 call_parameters.append(star+p['name'])
             formal_arg_list = ','.join(new_parameters)
