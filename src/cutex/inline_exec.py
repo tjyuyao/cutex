@@ -39,7 +39,7 @@ INT_SCALAR = {
 
 
 @cache
-def _jit_inline_compile(signature, cuda_src):
+def _jit_inline_compile(signature, cuda_src, boundscheck=True):
     module = SourceModule(
         f"""
     __global__ void inline_kernel({signature}) {{
@@ -48,13 +48,14 @@ def _jit_inline_compile(signature, cuda_src):
     """,
         float_bits=None,
         int_bits=None,
+        boundscheck=boundscheck,
     )
     module._jit_compile()
     func = module.mod.get_function("__wrapper_inline_kernel")
     return func
 
 
-def inline(cuda_src, float_bits=None, int_bits=32) -> None:
+def inline(cuda_src, float_bits=None, int_bits=32, boundscheck=True) -> None:
     # capture all local vars from the prev frame
     args = inspect.currentframe().f_back.f_locals
 
@@ -93,6 +94,6 @@ def inline(cuda_src, float_bits=None, int_bits=32) -> None:
             actual_args.append(arg)
         signature = ", ".join(formal_args)
         # get (cached) kernel function
-        func = _jit_inline_compile(signature, cuda_src)
+        func = _jit_inline_compile(signature, cuda_src, boundscheck=boundscheck)
         # call the kernel
         func(*actual_args, block=args["blockDim"], grid=args["gridDim"])

@@ -20,12 +20,20 @@ In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tens
 
 ## Example (inline CUDA API)
 
+This is a new high level API for writing custom kernels since v0.3.0. You omit the signature of the kernel function and `cutex.inline()` will compile and run it according to the context on the cuda device. This facillitates a fluent switching between pytorch and pycuda.
+
+Local variables of Tensor and common scalar types (`int`, `float`, etc.) and special ones `gridDim` and `blockDim` are captured into the inline execution, as if they were in the same scope. The order of defining them does not matter, only have to be assigned before the inline execution. 
+Multiple inline execution in the same python function is legal. When doing so, make `gridDim` and `blockDim` update their value before the next execution.
+
+The tensors can be acccessed element-wise using multi-dimensional squared brackets `[]` as illustrated in the following example. It can be read and write, and the modifications would reflected directly to the pytorch tensor on cuda devices. By default, with the `boundscheck` option on, these brackets will check for out of bound error. While this is very useful for debugging novel algorithms, it will make use of more registers in the SM, so if you want to make full use of the SM register resources, e.g. using maximum block threads, you need to turn boundscheck off for best performance.
+
 ```py
 import cutex
 import torch
+from torch import Tensor
 
 
-def matmul(A, B):
+def matmul(A:Tensor, B:Tensor):
     M, J = A.size()
     K, N = B.size()
     assert J == K
@@ -41,7 +49,7 @@ def matmul(A, B):
         v += A[m][k] * B[k][n];
     }
     C[m][n] = v;
-    """)  # all local vars are captured into the kernel except for those with unknown types.
+    """, boundscheck=False)  # all local vars are captured into the kernel except for those with unknown types.
     return C
 
 
@@ -85,7 +93,7 @@ __global__ void matmul(Tensor<float, 2> a, Tensor<float, 2> b, Tensor<float, 2> 
 //!cuda
 """,
     float_bits=32,  # change to 16 to use half precision as `float` type in the above source code.
-    boundscheck=True, # turning off checking makes the program to run faster, default is on.
+    boundscheck=True, # turning on for debug and off for performance (to use full threads of a block), default is on.
     )
 
 kernels.matmul(  # automatically discover the kernel function by its name (e.g. 'matmul'), just like a normal python module.
@@ -114,7 +122,8 @@ pip install -U cutex --index-url "https://pypi.org/simple/"
 # format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
 # "[CUDA]" means changes related to the cuda side Tensor API.
 
-v0.3.7+HEAD - bugfix: passing python float to a kernel that accept a __half type now works.
+v0.3.8+HEAD - add boundscheck option to inline execution
+v0.3.7+e48537 - bugfix: passing python float to a kernel that accept a __half type now works.
 v0.3.6+4e9b41 - bugfix: v0.3.5 uses regex to replace bool, this may be confused with Tensor with bool dtype, this version revert v0.3.5 and use the wrapper to convert scalar type.
 v0.3.5+8bdfbc - bugfix: bool scalar type automatically converted into int32_t.
 v0.3.4+07b6af - bugfix: error report in jupyter cell.
