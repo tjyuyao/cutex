@@ -22,11 +22,6 @@ In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tens
 
 This is a new high level API for writing custom kernels since v0.3.0. You omit the signature of the kernel function and `cutex.inline()` will compile and run it according to the context on the cuda device. This facillitates a fluent switching between pytorch and pycuda.
 
-Local variables of Tensor and common scalar types (`int`, `float`, etc.) and special ones `gridDim` and `blockDim` are captured into the inline execution, as if they were in the same scope. The order of defining them does not matter, only have to be assigned before the inline execution. 
-Multiple inline execution in the same python function is legal. When doing so, make `gridDim` and `blockDim` update their value before the next execution.
-
-The tensors can be acccessed element-wise using multi-dimensional squared brackets `[]` as illustrated in the following example. It can be read and write, and the modifications would reflected directly to the pytorch tensor on cuda devices. By default, with the `boundscheck` option on, these brackets will check for out of bound error. While this is very useful for debugging novel algorithms, it will make use of more registers in the SM, so if you want to make full use of the SM register resources, e.g. using maximum block threads, you need to turn boundscheck off for best performance.
-
 ```py
 import cutex
 import torch
@@ -63,6 +58,13 @@ def test():
 
 test()
 ```
+
+Local variables of Tensor and common scalar types (`int`, `float`, etc.) and special ones `gridDim` and `blockDim` are captured into the inline execution, as if they were in the same scope. The order of defining them does not matter, only have to be assigned before the inline execution. 
+Multiple inline execution in the same python function is legal. When doing so, make `gridDim` and `blockDim` update their value before the next execution.
+
+The tensors can be acccessed element-wise using multi-dimensional squared brackets `[]` as illustrated in the above example. It can be read and write, and the modifications would reflected directly to the pytorch tensor on cuda devices. By default, with the `boundscheck` option on, these brackets will check for out of bound error. While this is very useful for debugging novel algorithms, it will make use of more registers in the SM, so if you want to make full use of the SM register resources, e.g. using maximum block threads, you need to turn boundscheck off for best performance.
+
+Unless explicitly specified, the `float` type in the CUDA part will be automatically replaced to the same type as the first local Tensor variable with float dtype, in the above example, it would be aligned with `A`.
 
 ## Example (lower level SourceModule API)
 
