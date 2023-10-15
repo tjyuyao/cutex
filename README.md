@@ -7,16 +7,17 @@
 
 In a word, `cutex` bridges PyCUDA's just-in-time compilation with PyTorch's Tensor type.
 
-``cutex.SourceModule`` works differently compared to [PyTorch's official cuda extension guide](https://pytorch.org/tutorials/advanced/cpp_extension.html) in following ways:
-
-- **It compiles lightning fast!** Especially suitable for rapidly developing your favoritenew algorithm.
-- Without boilerplate cpp wrappers, **every user code goes within one python file**.
-- It use raw CUDA syntax so that PyTorch's c++ API is _not_ available.
-
 ``cutex.SourceModule`` extends pycuda's ``SourceModule`` in following ways:
 
+- Designed to work seemlessly with pytorch `Tensor` type, Data-Distributed Parallel (DDP), and `autograd.Function` API.
 - Support efficient **multi-dimensional `torch.Tensor` access with (efficient & optional) out-of-boundary check**.
 - Enhanced automatic type conversion and error messages.
+
+``cutex.SourceModule`` works differently compared to [PyTorch's official cuda extension guide](https://pytorch.org/tutorials/advanced/cpp_extension.html) in following ways:
+
+- **It compiles lightning fast!** Especially suitable for rapidly developing your favorite new algorithm.
+- Without boilerplate cpp wrappers, **every user code goes within one python file**.
+- It use raw CUDA syntax so that PyTorch's c++ API is _not_ available, it is recommended to use either raw CUDA with cutex or python API with pytorch.
 
 ## Example (inline CUDA API)
 
