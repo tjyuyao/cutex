@@ -240,7 +240,7 @@ def previous_frame_arg_lineno(arg_value):
     try:
         offset = 1
         source = open(inspect.getfile(frame)).read()
-    except FileNotFoundError:
+    except OSError:
         offset = frame.f_lineno
         source = inspect.getsource(frame)
     

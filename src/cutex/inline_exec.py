@@ -2,7 +2,7 @@ import torch
 import numpy
 import inspect
 from torch import Tensor
-from functools import cache
+from functools import lru_cache as cache
 
 from .src_module import _CUDAContext, _Tensor, SourceModule
 
