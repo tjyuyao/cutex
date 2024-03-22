@@ -125,7 +125,8 @@ pip install -U cutex --index-url "https://pypi.org/simple/"
 # format: {pypi-version}+{git-commit-hash} - ["[CUDA]"] {description}
 # "[CUDA]" means changes related to the cuda side Tensor API.
 
-v0.3.8+HEAD - add boundscheck option to inline execution
+v0.3.9+HEAD - backward compitability to v0.1.1 pointer mode to adapt with the old code.
+v0.3.8+77bdf8 - add boundscheck option to inline execution
 v0.3.7+e48537 - bugfix: passing python float to a kernel that accept a __half type now works.
 v0.3.6+4e9b41 - bugfix: v0.3.5 uses regex to replace bool, this may be confused with Tensor with bool dtype, this version revert v0.3.5 and use the wrapper to convert scalar type.
 v0.3.5+8bdfbc - bugfix: bool scalar type automatically converted into int32_t.

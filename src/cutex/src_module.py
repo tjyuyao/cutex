@@ -31,7 +31,7 @@ _kernel_cu_regex = re.compile(r'kernel.cu\((?P<lineno>[0-9]+)\)(.*)')
 _MEMCHECK_ENABLER = '#define _CUTEX_MEMCHECK_ 1 \n'
 _EXTRA_HEADERS ='#include "PyCUDATensorAccessor.cuh" \n'
 _EXTRA_HEADERS_LINECNT = _EXTRA_HEADERS.count('\n')
-
+_VERBOSE_FLAG = int(os.environ.get("CUTEX_VERBOSE", "0"))
 
 class _CUDAContext:
     
@@ -157,6 +157,10 @@ class SourceModule(object):
         from pycuda.compiler import SourceModule
         wrapper_lineno = self.source[:self.source.find("__global__")].count('\n')
         try:
+            if _VERBOSE_FLAG:
+                print("="*80)
+                print(self.compile_kwds["source"])
+                print("="*80)
             self.mod = SourceModule(**self.compile_kwds)
         except cuda.CompileError as e:
             # add source code that triggers the error to print
@@ -202,7 +206,7 @@ class SourceModule(object):
             new_parameters = []
             call_parameters = []
             for p in f['parameters']:
-                star = "*" if p['type'].startswith('Tensor<') else ""
+                star = "*" if p['type'].startswith('Tensor<') and p['type'].endswith('>') else ""
                 if p["type"] == "bool": p["type"] = "int32_t"
                 # print("\t", p["type"], p["name"])
                 if p["type"] == "__half": p["type"] = "float"
